@@ -147,12 +147,14 @@ abstract class AbstractItemNormalizer extends AbstractObjectNormalizer
      */
     protected function getAllowedAttributes($classOrObject, array $context, $attributesAsString = false)
     {
+
         $options = $this->getFactoryOptions($context);
-        $propertyNames = $this->propertyNameCollectionFactory->create($context['resource_class'], $options);
+        $className = is_object($classOrObject) ? get_class($classOrObject) : $classOrObject;
+        $propertyNames = $this->propertyNameCollectionFactory->create($className, $options);
 
         $allowedAttributes = [];
         foreach ($propertyNames as $propertyName) {
-            $propertyMetadata = $this->propertyMetadataFactory->create($context['resource_class'], $propertyName, $options);
+            $propertyMetadata = $this->propertyMetadataFactory->create($className, $propertyName, $options);
 
             if (
                 $this->isAllowedAttribute($classOrObject, $propertyName, null, $context) &&
@@ -294,7 +296,8 @@ abstract class AbstractItemNormalizer extends AbstractObjectNormalizer
 
         if (
             !$this->resourceClassResolver->isResourceClass($className) ||
-            $propertyMetadata->isWritableLink()
+            $propertyMetadata->isWritableLink() ||
+            $propertyMetadata->getIri() === "false"
         ) {
             $context['resource_class'] = $className;
             $context['api_allow_update'] = true;
@@ -416,9 +419,14 @@ abstract class AbstractItemNormalizer extends AbstractObjectNormalizer
         if (
             $type &&
             ($className = $type->getClassName()) &&
-            $this->resourceClassResolver->isResourceClass($className)
+            $this->resourceClassResolver->isResourceClass($className) &&
+            $propertyMetadata->getIri() !== "false"
         ) {
             return $this->normalizeRelation($propertyMetadata, $attributeValue, $className, $format, $this->createChildContext($context, $attribute));
+        }
+
+        if ($propertyMetadata->getIri() === "false") {
+            $context['iri'] = false;
         }
 
         unset($context['resource_class']);

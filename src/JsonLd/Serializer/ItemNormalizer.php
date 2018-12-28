@@ -68,15 +68,19 @@ final class ItemNormalizer extends AbstractItemNormalizer
 
         // Use resolved resource class instead of given resource class to support multiple inheritance child types
         $context['resource_class'] = $resourceClass;
-        $context['iri'] = $this->iriConverter->getIriFromItem($object);
+        if (!isset($context['iri']) || isset($context['iri']) && false !== $context['iri']) {
+            $context['iri'] = $this->iriConverter->getIriFromItem($object);
+        }
 
         $rawData = parent::normalize($object, $format, $context);
         if (!\is_array($rawData)) {
             return $rawData;
         }
 
-        $data['@id'] = $context['iri'];
-        $data['@type'] = $resourceMetadata->getIri() ?: $resourceMetadata->getShortName();
+        if ($context['iri']) {
+            $data['@id'] = $context['iri'];
+            $data['@type'] = $resourceMetadata->getIri() ?: $resourceMetadata->getShortName();
+        }
 
         return $data + $rawData;
     }

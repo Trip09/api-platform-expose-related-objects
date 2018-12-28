@@ -124,7 +124,13 @@ final class DocumentationNormalizer implements NormalizerInterface, CacheableSup
                 continue;
             }
 
-            foreach ($this->subresourceOperationFactory->create($resourceClass) as $operationId => $subresourceOperation) {
+            $subresourceOperations = $this->subresourceOperationFactory->create($resourceClass);
+
+            if (\count($subresourceOperations) < 1) {
+                $this->getDefinition($definitions, $resourceMetadata, $resourceClass, null);
+            }
+
+            foreach ($subresourceOperations as $operationId => $subresourceOperation) {
                 $operationName = 'get';
                 $subResourceMetadata = $this->resourceMetadataFactory->create($subresourceOperation['resource_class']);
                 $serializerContext = $this->getSerializerContext(OperationType::SUBRESOURCE, false, $subResourceMetadata, $operationName);
